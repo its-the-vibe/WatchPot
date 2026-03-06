@@ -13,7 +13,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 	"gopkg.in/yaml.v3"
 )
@@ -227,11 +226,6 @@ func runSubscription(ctx context.Context, rdb *redis.Client, cfg Config, b *brok
 }
 
 func main() {
-	// Load .env (sensitive vars like REDIS_PASSWORD) – ignore if missing
-	if err := godotenv.Load(); err != nil && !errors.Is(err, os.ErrNotExist) {
-		log.Printf("Warning: could not load .env: %v", err)
-	}
-
 	cfgPath := "config.yaml"
 	if v := os.Getenv("WATCHPOT_CONFIG"); v != "" {
 		cfgPath = v

@@ -2,15 +2,16 @@ services:
   watchpot:
     build: .
     image: watchpot:latest
-    restart: unless-stopped
+    restart: on-failure:10
     read_only: true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
-      - "8080:8080"
-    env_file:
-      - .env
+      - "${PORT}:8080"
     volumes:
       - ./config.yaml:/config.yaml:ro
     environment:
       WATCHPOT_CONFIG: /config.yaml
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     # Redis is hosted externally; configure its address in config.yaml
     # and the password (if any) in .env as REDIS_PASSWORD.
