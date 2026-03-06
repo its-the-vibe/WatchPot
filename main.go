@@ -113,7 +113,9 @@ func loadConfig(path string) (Config, error) {
 }
 
 // sseHandler streams Server-Sent Events to a connected browser client.
-func sseHandler(b *broker) http.HandlerFunc {
+// It immediately sends an init event with the current state so clients
+// do not stay stuck on "connecting…" when no commands are running.
+func sseHandler(b *broker, rdb *redis.Client, cfg Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		flusher, ok := w.(http.Flusher)
 		if !ok {
@@ -127,6 +129,22 @@ func sseHandler(b *broker) http.HandlerFunc {
 
 		ch := b.subscribe()
 		defer b.unsubscribe(ch)
+
+		// Send the current state immediately so the client bootstraps
+		// without waiting for the next Redis pub/sub event.
+		// If fetching or marshalling fails, we log and continue: the client
+		// will still receive future broker events as state updates arrive.
+		if state, err := fetchState(r.Context(), rdb, cfg.RedisKey); err == nil {
+			payload := SSEPayload{Running: state != nil, State: state}
+			if data, err := json.Marshal(payload); err == nil {
+				fmt.Fprintf(w, "data: %s\n\n", data)
+				flusher.Flush()
+			} else {
+				log.Printf("Error marshalling init SSE payload: %v", err)
+			}
+		} else {
+			log.Printf("Error fetching init state: %v", err)
+		}
 
 		for {
 			select {
@@ -256,7 +274,7 @@ func main() {
 	go redisListener(ctx, rdb, cfg, b)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/events", sseHandler(b))
+	mux.HandleFunc("/events", sseHandler(b, rdb, cfg))
 	mux.Handle("/", http.FileServer(http.Dir("static")))
 
 	srv := &http.Server{
