@@ -11,7 +11,5 @@ services:
     volumes:
       - ./config.yaml:/config.yaml:ro
     environment:
-      WATCHPOT_CONFIG: /config.yaml
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-    # Redis is hosted externally; configure its address in config.yaml
-    # and the password (if any) in .env as REDIS_PASSWORD.
+      - WATCHPOT_CONFIG=/config.yaml
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
