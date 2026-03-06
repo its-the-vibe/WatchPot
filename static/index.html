@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WatchPot</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: system-ui, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      letter-spacing: 0.05em;
+    }
+
+    #pot {
+      width: min(60vw, 400px);
+      height: min(60vw, 400px);
+      border-radius: 1rem;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      transition: background-image 0.3s ease;
+    }
+
+    #status {
+      font-size: 1.1rem;
+      text-align: center;
+      max-width: 600px;
+      line-height: 1.6;
+      min-height: 4rem;
+    }
+
+    #status.running {
+      color: #f9a825;
+    }
+
+    #status.idle {
+      color: #80cbc4;
+    }
+
+    #connection {
+      position: fixed;
+      top: 0.75rem;
+      right: 1rem;
+      font-size: 0.75rem;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <h1>WatchPot 🫕</h1>
+  <div id="pot"></div>
+  <div id="status" class="idle"></div>
+  <div id="connection">connecting…</div>
+
+  <script>
+    const pot       = document.getElementById('pot');
+    const status    = document.getElementById('status');
+    const connLabel = document.getElementById('connection');
+
+    const IMG_IDLE    = 'images/no_command_running.png';
+    const IMG_RUNNING = 'images/command_running.png';
+
+    function setIdle() {
+      pot.style.backgroundImage = `url('${IMG_IDLE}')`;
+      status.className = 'idle';
+      status.textContent = '';
+    }
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function formatDuration(ms) {
+      const s  = Math.floor(ms / 1000);
+      const h  = Math.floor(s / 3600);
+      const m  = Math.floor((s % 3600) / 60);
+      const ss = s % 60;
+      if (h > 0) return `${h}h ${pad(m)}m ${pad(ss)}s`;
+      if (m > 0) return `${m}m ${pad(ss)}s`;
+      return `${ss}s`;
+    }
+
+    let _lastState = null;
+
+    function renderRunning(state) {
+      pot.style.backgroundImage = `url('${IMG_RUNNING}')`;
+      status.className = 'running';
+
+      const batchStart = new Date(state.batch_started_at);
+      const cmdStart   = new Date(state.command_started_at);
+      const now        = new Date();
+      const batchDur   = formatDuration(now - batchStart);
+      const cmdDur     = formatDuration(now - cmdStart);
+      const total      = state.commands ? state.commands.length : 0;
+      const idx        = (state.command_index ?? 0) + 1;
+      const cmd        = state.commands ? state.commands[state.command_index] : '';
+
+      status.innerHTML =
+        `<strong>${escapeHtml(state.repo || 'unknown repo')}</strong><br>` +
+        `Command ${idx}/${total}: <code>${escapeHtml(cmd)}</code><br>` +
+        `Batch running for ${batchDur} &bull; Current command: ${cmdDur}`;
+    }
+
+    function escapeHtml(s) {
+      return (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function handlePayload(payload) {
+      if (payload.running && payload.state) {
+        _lastState = payload.state;
+        renderRunning(_lastState);
+      } else {
+        _lastState = null;
+        setIdle();
+      }
+    }
+
+    setIdle();
+
+    // Refresh duration display every second when a command is running
+    setInterval(() => {
+      if (_lastState) renderRunning(_lastState);
+    }, 1000);
+
+    function connect() {
+      connLabel.textContent = 'connecting…';
+      const es = new EventSource('/events');
+
+      es.onopen = () => { connLabel.textContent = 'connected ✓'; };
+
+      es.onmessage = (e) => {
+        try {
+          handlePayload(JSON.parse(e.data));
+        } catch (err) {
+          console.error('Failed to parse SSE payload', err);
+        }
+      };
+
+      es.onerror = () => {
+        connLabel.textContent = 'reconnecting…';
+        es.close();
+        setTimeout(connect, 3000);
+      };
+    }
+
+    connect();
+  </script>
+</body>
+</html>

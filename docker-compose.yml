@@ -1,0 +1,16 @@
+services:
+  watchpot:
+    build: .
+    image: watchpot:latest
+    restart: unless-stopped
+    read_only: true
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - ./config.yaml:/config.yaml:ro
+    environment:
+      WATCHPOT_CONFIG: /config.yaml
+    # Redis is hosted externally; configure its address in config.yaml
+    # and the password (if any) in .env as REDIS_PASSWORD.

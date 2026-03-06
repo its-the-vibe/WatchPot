@@ -1,0 +1,16 @@
+# WatchPot configuration example
+# Copy to config.yaml and adjust for your environment.
+
+# Redis address (host:port)
+redis_addr: "localhost:6379"
+
+# Redis Pub/Sub channel that Poppit publishes execution events to.
+# Corresponds to POPPIT_SERVICE_EXECUTION_EVENTS_CHANNEL in Poppit.
+redis_channel: "poppit:execution-events"
+
+# Redis key holding the current command state JSON written by Poppit.
+# Corresponds to POPPIT_SERVICE_CURRENT_COMMAND_KEY in Poppit.
+redis_key: "poppit:current-command"
+
+# Address for the HTTP server to listen on.
+server_addr: ":8080"
