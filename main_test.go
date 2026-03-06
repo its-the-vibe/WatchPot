@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -147,7 +149,8 @@ func TestSSEHandler_SendsData(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	// We need a ResponseRecorder that supports http.Flusher
-	handler := sseHandler(b)
+	// Pass nil rdb and empty cfg so fetchState returns nil immediately (no Redis key).
+	handler := sseHandler(b, nil, Config{})
 
 	done := make(chan struct{})
 	go func() {
@@ -160,6 +163,40 @@ func TestSSEHandler_SendsData(t *testing.T) {
 	// just check the headers were set correctly before the goroutine exits.
 	if ct := rr.Header().Get("Content-Type"); ct != "text/event-stream" {
 		t.Errorf("Content-Type = %q, want text/event-stream", ct)
+	}
+}
+
+// TestSSEHandler_SendsInitEvent verifies that sseHandler immediately writes an
+// init SSE payload to a newly connected client, even when no broker event has
+// been broadcast yet.
+func TestSSEHandler_SendsInitEvent(t *testing.T) {
+	b := newBroker()
+
+	// Empty RedisKey → fetchState returns nil, nil (no Redis call).
+	cfg := Config{}
+
+	req := httptest.NewRequest(http.MethodGet, "/events", nil)
+	ctx, cancel := context.WithCancel(req.Context())
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	handler := sseHandler(b, nil, cfg)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		handler(rr, req)
+	}()
+
+	// The init event is written synchronously before the handler enters its
+	// event loop, so a brief yield is sufficient before we cancel and wait.
+	time.Sleep(20 * time.Millisecond)
+	cancel()
+	<-done
+
+	body := rr.Body.String()
+	if !strings.Contains(body, `"running":false`) {
+		t.Errorf("init SSE body = %q, want it to contain running:false", body)
 	}
 }
 
