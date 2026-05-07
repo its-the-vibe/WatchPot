@@ -1,6 +1,6 @@
 module github.com/its-the-vibe/watchpot
 
-go 1.26.2
+go 1.26.3
 
 require (
 	github.com/redis/go-redis/v9 v9.19.0
