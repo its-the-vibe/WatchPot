@@ -1,7 +1,8 @@
 services:
   watchpot:
     build: .
-    image: watchpot:latest
+    image: ghcr.io/its-the-vibe/watchpot:latest
+    pull_policy: always
     restart: on-failure:10
     read_only: true
     extra_hosts:
