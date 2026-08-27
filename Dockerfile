@@ -12,10 +12,9 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -trimpath -o watchpot .
 
 # ── Runtime stage (scratch) ──────────────────────────────────────────────────
-FROM scratch
+FROM gcr.io/distroless/static-debian13:nonroot
 
-# TLS root certificates required for Redis TLS connections
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+WORKDIR /
 
 # Binary
 COPY --from=builder /build/watchpot /watchpot
@@ -24,5 +23,7 @@ COPY --from=builder /build/watchpot /watchpot
 COPY static /static
 
 EXPOSE 8080
+
+USER nonroot:nonroot
 
 ENTRYPOINT ["/watchpot"]
