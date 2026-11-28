@@ -28,6 +28,8 @@ github.com/redis/go-redis/v9 v9.23.0 h1:/TTVdJa8BRNsybwwGGnmiYktHNlUXtbOQxlWpHBP
 github.com/redis/go-redis/v9 v9.23.0/go.mod h1:EWP2UUk+XDaI1s5nQB5mablZN6vccXlmBQTyfnF87D0=
 github.com/redis/go-redis/v9 v9.24.0 h1:X1AnQHWaSfMeggDQm7UFad1YwJmoZxVm5XkaP0kr6nQ=
 github.com/redis/go-redis/v9 v9.24.0/go.mod h1:ted97kpLnB4S2KJkTkw+7GzRjgkFnU909IIrksu+ut4=
+github.com/redis/go-redis/v9 v9.24.1 h1:WZ9a1QO2mkLFLYyQ1IPFvS4xBuCuZy9eXtIxppdj/Z0=
+github.com/redis/go-redis/v9 v9.24.1/go.mod h1:ted97kpLnB4S2KJkTkw+7GzRjgkFnU909IIrksu+ut4=
 github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0Q=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/zeebo/xxh3 v1.0.2 h1:xZmwmqxHZA8AI603jOQ0tMqmBr9lPeFwGg6d+xy9DC0=
